@@ -1,0 +1,47 @@
+version: '2'
+
+services:
+    db:
+        image: mysql
+        volumes:
+            - "./.data/db:/var/lib/mysql"
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    php:
+        build: docker/php
+        links:
+            - db
+        volumes:
+            - ${CONTAO_APP_PATH}:/contao
+            - ./logs/contao:/contao/app/logs
+    nginx:
+        build: docker/nginx
+        ports:
+            - 80:80
+            - 443:443
+        links:
+            - php
+        volumes_from:
+            - php
+        volumes:
+            - ./logs/nginx/:/var/log/nginx
+        environment:
+            CONTAO_APP_HOST: ${CONTAO_APP_HOST}
+        command: /bin/bash -c "/bin/sh /opt/contao.sh"
+    elk:
+        image: willdurand/elk
+        ports:
+            - 81:80
+        links:
+            - db
+            - php
+            - nginx
+        volumes:
+            - ./docker/elk/logstash:/etc/logstash
+            - ./docker/elk/logstash/patterns:/opt/logstash/patterns
+        volumes_from:
+            - php
+            - nginx
