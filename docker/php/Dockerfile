@@ -5,12 +5,16 @@ MAINTAINER Moave Medien <support@moave.de>
 
 RUN apt-get update && apt-get install -y \
     git \
+    sudo \
     unzip \
     zlib1g-dev \
     libicu-dev \
     g++ \
     libmcrypt-dev \
-    libpng-dev
+    libpng-dev \
+    gettext-base \
+    php7-gd
+
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -37,5 +41,14 @@ RUN echo "xdebug.idekey=\"PHPSTORM\"" >> /usr/local/etc/php/conf.d/docker-php-ex
 RUN echo "xdebug.remote_port=9001" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
 RUN echo 'alias contao="php bin/console"' >> ~/.bashrc
+RUN echo 'alias ll="ls -la"' >> ~/.bashrc
 
-WORKDIR /contao
+ADD contao_install.sh /opt/
+ADD parameters.yml.template /opt/
+
+RUN usermod -u 1000 www-data
+
+WORKDIR /app
+
+# change owner for app
+RUN chown -R www-data:www-data /app

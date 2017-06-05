@@ -5,7 +5,7 @@ server {
 server {
 
     server_name ${CONTAO_APP_HOST};
-    root /contao/web;
+    root /app/web;
 
     index index.php app_dev.php app.php index.html;
 
@@ -17,7 +17,30 @@ server {
         rewrite ^(.*)$ /app.php/$1 last;
     }
 
-    location ~ ^/(app|app_dev|config)\.php(/|$) {
+    location ~ ^/(favicon\.ico|robots\.txt)$ {
+        allow all;
+        log_not_found off;
+        access_log off;
+    }
+
+    # don't show templates
+    location ~* \.(tpl|html5|xhtml)$ {
+        deny all;
+    }
+
+    # don't show hidden files
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
+
+    location ~* \.(jpg|jpeg|png|gif|css|js|ico)$ {
+        expires max;
+        log_not_found off;
+    }
+
+    location ~ ^/(app|app_dev|config|install)\.php(/|$) {
         fastcgi_pass php-upstream;
         fastcgi_split_path_info ^(.+\.php)(/.*)$;
         include fastcgi_params;

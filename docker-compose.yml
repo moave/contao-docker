@@ -15,8 +15,16 @@ services:
         links:
             - db
         volumes:
-            - ${CONTAO_APP_PATH}:/contao
-            - ./logs/contao:/contao/app/logs
+            - ${CONTAO_APP_PATH}:/app:rw
+        environment:
+            CONTAO_APP_HOST: ${CONTAO_APP_HOST}
+            CONTAO_VERSION: ${CONTAO_VERSION}
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+            MYSQL_HOST: ${MYSQL_HOST}
+            MYSQL_PORT: ${MYSQL_PORT}
+        command: /bin/bash -c "/bin/sh /opt/contao_install.sh"
     nginx:
         build: docker/nginx
         ports:
@@ -27,9 +35,10 @@ services:
         volumes_from:
             - php
         volumes:
-            - ./logs/nginx/:/var/log/nginx
+            - ./logs/nginx/:/var/log/nginx:rw
         environment:
             CONTAO_APP_HOST: ${CONTAO_APP_HOST}
+            CONTAO_VERSION: ${CONTAO_VERSION}
         command: /bin/bash -c "/bin/sh /opt/contao.sh"
     elk:
         image: willdurand/elk
