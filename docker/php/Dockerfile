@@ -12,8 +12,7 @@ RUN apt-get update && apt-get install -y \
     g++ \
     libmcrypt-dev \
     libpng-dev \
-    gettext-base \
-    php7-gd
+    gettext-base
 
 
 # Install Composer

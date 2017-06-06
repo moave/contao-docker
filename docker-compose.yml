@@ -24,7 +24,7 @@ services:
             MYSQL_PASSWORD: ${MYSQL_PASSWORD}
             MYSQL_HOST: ${MYSQL_HOST}
             MYSQL_PORT: ${MYSQL_PORT}
-        command: /bin/bash -c "/bin/sh /opt/contao_install.sh"
+        #command: /bin/bash -c "/bin/sh /opt/contao_install.sh"
     nginx:
         build: docker/nginx
         ports:
