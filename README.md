@@ -73,7 +73,7 @@ contaodocker_php_1           php-fpm                          Up      0.0.0.0:90
 ```bash
 # bash commands
 $ ./project --help
-
+```
 
 ## FAQ
 
