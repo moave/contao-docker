@@ -1,0 +1,109 @@
+#!/bin/sh
+
+##
+# this is currently a simple wrapper for our common docker commands
+# i know this is not the best code, but currently it works ;-)
+#
+# AUTHOR: Robert Eichholtz <info@eichie.de>
+##
+
+VERSION="0.0.1-dev"
+VERBOSE=false
+ARGS_COUNT="$#"
+
+show_help () {
+    echo "NAME:
+    $(basename "$0") docker env build program
+
+VERSION:
+    ${VERSION}
+
+USAGE:
+    [-h|--help] [-v|--verbose] [arguments]
+
+ARGUMENTS:
+    start         start the docker
+    stop          down the docker
+    status        print current docker container status
+    build         build the docker
+    attach        attach to a container with second arg (i.e: db|php|nginx|elk)
+    mysql         go into mysql shell
+    cleanup       remove project docker container and images
+    network       print the docker ips
+
+OPTIONS:
+    -h|--help     show this help text
+    -v|--verbose  show more verbose output"
+    exit 0
+}
+
+enable_verbose () {
+    VERBOSE=true;
+}
+
+start_docker () {
+    docker-compose up -d
+}
+
+stop_docker () {
+    docker-compose down
+}
+
+build_docker () {
+    docker-compose build
+}
+
+attach_docker () {
+    docker-compose exec "${1}" bash
+}
+
+status_docker () {
+    docker-compose ps
+}
+
+mysql_docker () {
+    docker-compose exec db mysql -uroot -p"root"
+}
+
+network_docker () {
+    docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q)
+}
+
+cleanup_docker () {
+    read -p "Are you sure? Project docker container and images will be deleted (y|N)" -n 1 -r
+    if [[ $REPLY =~ ^[yY]$ ]]
+    then
+        docker rm $(docker ps -aq)
+        docker rmi $(docker images -q)
+    fi
+}
+
+show_possible_args () {
+    if [ ! "$ARGS_COUNT" -eq 0 ]; then
+        echo "Only one of the following args are available (start|stop|status|build|attach|mysql|cleanup|network)"
+    else
+        show_help;
+    fi
+}
+
+process_args () {
+    case "$1" in
+        start ) start_docker; shift ;;
+        stop  ) stop_docker; shift ;;
+        status ) status_docker; shift ;;
+        build ) build_docker; shift ;;
+        attach ) attach_docker "$2"; shift ;;
+        mysql ) mysql_docker; shift ;;
+        cleanup ) cleanup_docker; shift ;;
+        network ) network_docker; shift ;;
+        * ) show_possible_args; shift ;;
+    esac
+}
+
+case "$1" in
+    -v | --verbose ) enable_verbose; shift ;;
+    -h | --help ) show_help; shift ;;
+    -- ) show_help; break ;;
+esac
+
+process_args "$@"
