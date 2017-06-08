@@ -31,6 +31,7 @@ RUN docker-php-ext-install pdo pdo_mysql gd intl mbstring mcrypt opcache
 # install xdebug
 RUN pecl install xdebug
 RUN docker-php-ext-enable xdebug
+RUN echo "upload_max_filesize = 64M" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 RUN echo "error_reporting = E_ALL" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 RUN echo "display_startup_errors = On" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 RUN echo "display_errors = On" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
@@ -45,7 +46,7 @@ RUN echo 'alias ll="ls -la"' >> ~/.bashrc
 ADD contao_install.sh /opt/
 ADD parameters.yml.template /opt/
 
-RUN usermod -u 33 www-data
+RUN usermod -u 1000 www-data
 
 WORKDIR /app
 

@@ -14,7 +14,7 @@ server {
     }
 
     location @rewriteapp {
-        rewrite ^(.*)$ /app.php/$1 last;
+        rewrite ^(.*)$ /app_dev.php/$1 last;
     }
 
     location ~ ^/(favicon\.ico|robots\.txt)$ {

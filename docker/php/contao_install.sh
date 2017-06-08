@@ -13,7 +13,9 @@ fi
 # composer install if vendor folder does not exists and change permission while install with root
 if [ ! -d /app/vendor ]; then
     composer install -d /app
-    chown -R www-data:${LOCAL_USER_ID} /app
+    chown -R www-data:www-data /app
+else
+    php bin/console contao:symlinks
 fi
 
 # we have overwritten the CMD from dockerfile so we must call it self
