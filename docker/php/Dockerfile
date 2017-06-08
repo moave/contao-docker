@@ -37,7 +37,7 @@ RUN echo "display_errors = On" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebu
 RUN echo "xdebug.remote_enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 RUN echo "xdebug.remote_connect_back=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 RUN echo "xdebug.idekey=\"PHPSTORM\"" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
-RUN echo "xdebug.remote_port=9001" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+RUN echo "xdebug.remote_port=9000" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
 RUN echo 'alias contao="php bin/console"' >> ~/.bashrc
 RUN echo 'alias ll="ls -la"' >> ~/.bashrc
@@ -45,7 +45,7 @@ RUN echo 'alias ll="ls -la"' >> ~/.bashrc
 ADD contao_install.sh /opt/
 ADD parameters.yml.template /opt/
 
-RUN usermod -u 1000 www-data
+RUN usermod -u 33 www-data
 
 WORKDIR /app
 

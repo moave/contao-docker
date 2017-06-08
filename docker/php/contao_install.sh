@@ -10,10 +10,13 @@ if [ ! -f /app/app/config/parameters.yml ]; then
     envsubst '\$MYSQL_DATABASE \$MYSQL_USER \$MYSQL_PASSWORD \$MYSQL_HOST \$MYSQL_PORT' < /opt/parameters.yml.template > /app/app/config/parameters.yml
 fi
 
-# composer install if vendor folder does not exists
+# composer install if vendor folder does not exists and change permission while install with root
 if [ ! -d /app/vendor ]; then
     composer install -d /app
+    chown -R www-data:${LOCAL_USER_ID} /app
 fi
 
-#chown -R www-data:www-data /app
+# we have overwritten the CMD from dockerfile so we must call it self
+php-fpm
 
+exit 0
