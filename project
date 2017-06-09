@@ -10,6 +10,8 @@
 VERSION="0.0.1-dev"
 VERBOSE=false
 ARGS_COUNT="$#"
+USERID=`id -u $USER`
+USERNAME=`whoami`
 
 show_help () {
     echo "NAME:
@@ -61,6 +63,30 @@ status_docker () {
     docker-compose ps
 }
 
+# todo:
+#  - script: check for existing host entry
+#  - script: check for .env file
+#  - docker: install local user .env file in docker
+#  - docker: change username
+#  - docker: execute composer etc as username
+install_docker () {
+
+    NGINX_DOMAIN=${1}
+    NGINX_IP=`docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q) | grep nginx | awk '{print $3;}'`
+
+    cp -f ./.env.dist ./.env
+    sed -i s/__USERID__/${USERID}/g ./.env
+    sed -i s/__USERNAME__/${USERNAME}/g ./.env
+    sed -i s/__DOMAIN__/${NGINX_DOMAIN}/g ./.env
+
+    build_docker;
+    start_docker;
+
+    # update hostsfile
+    echo "${NGINX_IP}\t${NGINX_DOMAIN}" >> /etc/hosts
+
+}
+
 mysql_docker () {
     docker-compose exec db mysql -uroot -p"root"
 }
@@ -92,6 +118,7 @@ process_args () {
         stop  ) stop_docker; shift ;;
         status ) status_docker; shift ;;
         build ) build_docker; shift ;;
+        install ) install_docker "$2"; shift ;;
         attach ) attach_docker "$2"; shift ;;
         mysql ) mysql_docker; shift ;;
         cleanup ) cleanup_docker; shift ;;
