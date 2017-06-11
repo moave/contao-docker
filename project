@@ -35,9 +35,13 @@ ARGUMENTS:
     status        print current docker container status
     build         build the docker
     php           interactive shell for php
+    node          interactive shell for node
     build         interactive shell for nginx
     attach        attach to a container with second arg (i.e: db|php|nginx|elk)
     mysql         go into mysql shell
+    npm           exec npm
+    bower         exec bower
+    grunt         exec grunt
     install       install project with second arg (i.e: yourdomain.dev)
     cleanup       remove project docker container and images
     update-hosts  update hosts using sudo with second arg (i.e: yourdomain.dev)
@@ -127,6 +131,26 @@ cmd_nginx_docker () {
     docker-compose exec --user ${USERNAME} nginx ${@}
 }
 
+cmd_node_docker () {
+    shift 1
+    docker run -it --rm -v $(pwd):/app -w /app digitallyseamless/nodejs-bower-grunt
+}
+
+npm_docker () {
+    shift 1
+    docker run -it --rm -v $(pwd):/app -w /app digitallyseamless/nodejs-bower-grunt npm ${@}
+}
+
+bower_docker () {
+    shift 1
+    docker run -it --rm -v $(pwd):/app -w /app digitallyseamless/nodejs-bower-grunt bower ${@}
+}
+
+grunt_docker () {
+    shift 1
+    docker run -it --rm -v $(pwd):/app -w /app digitallyseamless/nodejs-bower-grunt grunt ${@}
+}
+
 import_mysql () {
     SQL_FILE=${1};
     if [ -f ${SQL_FILE} ]; then
@@ -159,7 +183,7 @@ cleanup_docker () {
 
 show_possible_args () {
     if [ ! "$ARGS_COUNT" -eq 0 ]; then
-        echo "Only one of the following args are available (start|stop|status|build|attach|php|nginx|install|mysql|cleanup|network|import-sql)"
+        echo "Only one of the following args are available (start|stop|status|build|attach|php|nginx|install|mysql|cleanup|network|import-sql|npm|bower|grunt)"
     else
         show_help;
     fi
@@ -173,6 +197,10 @@ process_args () {
         build ) build_docker; shift ;;
         php ) cmd_php_docker "$@"; shift ;;
         nginx ) cmd_nginx_docker "$@"; shift ;;
+        node ) cmd_node_docker "$@"; shift ;;
+        npm ) npm_docker "$@"; shift ;;
+        bower ) bower_docker "$@"; shift ;;
+        grunt ) grunt_docker "$@"; shift ;;
         install ) install_docker "$2"; shift ;;
         update-hosts ) update_hosts "$2"; shift ;;
         attach ) attach_docker "$2"; shift ;;
