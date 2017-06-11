@@ -176,8 +176,8 @@ process_args () {
         install ) install_docker "$2"; shift ;;
         update-hosts ) update_hosts "$2"; shift ;;
         attach ) attach_docker "$2"; shift ;;
-        import-sql ) import_mysql "$2"; shift ;;
-        export-sql ) export_mysql "$2"; shift ;;
+        import-sql ) import_mysql "$1"; shift ;;
+        export-sql ) export_mysql "$1"; shift ;;
         mysql ) mysql_docker; shift ;;
         cleanup ) cleanup_docker; shift ;;
         network ) network_docker; shift ;;
