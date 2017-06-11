@@ -1,6 +1,9 @@
 # See https://github.com/docker-library/php/blob/4677ca134fe48d20c820a19becb99198824d78e3/7.0/fpm/Dockerfile
 FROM php:7.1-fpm
 
+ARG USERID
+ARG USERNAME
+
 MAINTAINER Moave Medien <support@moave.de>
 
 RUN apt-get update && apt-get install -y \
@@ -40,15 +43,23 @@ RUN echo "xdebug.remote_connect_back=1" >> /usr/local/etc/php/conf.d/docker-php-
 RUN echo "xdebug.idekey=\"PHPSTORM\"" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 RUN echo "xdebug.remote_port=9000" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
+# run php as another user
+RUN echo "user = ${USERNAME}" >> /usr/local/etc/php-fpm.d/zz-docker.conf
+RUN echo "group = ${USERNAME}" >> /usr/local/etc/php-fpm.d/zz-docker.conf
+RUN echo "listen.owner = www-data" >> /usr/local/etc/php-fpm.d/zz-docker.conf
+RUN echo "listen.group = www-data" >> /usr/local/etc/php-fpm.d/zz-docker.conf
+
+# some aliases
 RUN echo 'alias sf="php bin/console"' >> ~/.bashrc
 RUN echo 'alias ll="ls -la"' >> ~/.bashrc
 
+# add files
 ADD contao_install.sh /opt/
 ADD parameters.yml.template /opt/
 
-RUN usermod -u 1000 www-data
+# create local user while get uid and name from current host user
+RUN adduser --gecos "" -q --home /home/${USERNAME} --disabled-password --shell /bin/bash --uid ${USERID} ${USERNAME}
 
 WORKDIR /app
 
-# change owner for app
-RUN chown -R www-data:www-data /app
+RUN chown -R ${USERNAME}:${USERNAME} /app

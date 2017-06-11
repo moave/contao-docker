@@ -10,8 +10,14 @@
 VERSION="0.0.1-dev"
 VERBOSE=false
 ARGS_COUNT="$#"
-USERID=`id -u $USER`
-USERNAME=`whoami`
+USERID=$(id -u $USER)
+USERNAME=$(whoami)
+ETC_HOSTS=/etc/hosts
+ENV_FILE=./.env
+
+if [ -f $ENV_FILE ];then
+    . $ENV_FILE
+fi
 
 show_help () {
     echo "NAME:
@@ -28,9 +34,15 @@ ARGUMENTS:
     stop          down the docker
     status        print current docker container status
     build         build the docker
+    php           interactive shell for php
+    build         interactive shell for nginx
     attach        attach to a container with second arg (i.e: db|php|nginx|elk)
     mysql         go into mysql shell
+    install       install project with second arg (i.e: yourdomain.dev)
     cleanup       remove project docker container and images
+    update-hosts  update hosts using sudo with second arg (i.e: yourdomain.dev)
+    import-sql    import sql file into db with second arg (i.e: mybackup.sql)
+    export-sql    export db into sql file with second arg (i.e: mybackup.sql)
     network       print the docker ips
 
 OPTIONS:
@@ -63,16 +75,14 @@ status_docker () {
     docker-compose ps
 }
 
-# todo:
-#  - script: check for existing host entry
-#  - script: check for .env file
-#  - docker: install local user .env file in docker
-#  - docker: change username
-#  - docker: execute composer etc as username
 install_docker () {
 
+    if [ -f ./.env ]; then
+        echo "Project already installed. Please delete the .env file to install"
+        exit 0;
+    fi
+
     NGINX_DOMAIN=${1}
-    NGINX_IP=`docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q) | grep nginx | awk '{print $3;}'`
 
     cp -f ./.env.dist ./.env
     sed -i s/__USERID__/${USERID}/g ./.env
@@ -81,10 +91,21 @@ install_docker () {
 
     build_docker;
     start_docker;
+    update_hosts $NGINX_DOMAIN;
+}
 
-    # update hostsfile
-    echo "${NGINX_IP}\t${NGINX_DOMAIN}" >> /etc/hosts
+update_hosts ()  {
+    NGINX_DOMAIN=${1}
+    NGINX_IP=`docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q) | grep nginx | awk '{print $3;}'`
 
+    if [ -n "$(grep ${NGINX_DOMAIN} /etc/hosts)" ]
+    then
+        echo "${NGINX_DOMAIN} was found in your ${ETC_HOSTS}; Removing now";
+        sudo sed -i".bak" "/$NGINX_DOMAIN/d" $ETC_HOSTS;
+    fi
+
+    echo "${NGINX_IP} ${NGINX_DOMAIN} was added to your ${ETC_HOSTS}"
+    sudo -- sh -c -e "echo '${NGINX_IP}\t${NGINX_DOMAIN}' >> ${ETC_HOSTS}";
 }
 
 mysql_docker () {
@@ -95,18 +116,50 @@ network_docker () {
     docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q)
 }
 
-cleanup_docker () {
-    read -p "Are you sure? Project docker container and images will be deleted (y|N)" -n 1 -r
-    if [[ $REPLY =~ ^[yY]$ ]]
-    then
-        docker rm $(docker ps -aq)
-        docker rmi $(docker images -q)
+cmd_php_docker () {
+    shift 1
+    echo "docker-compose exec --user ${USERNAME} php ${@}";
+    docker-compose exec --user ${USERNAME} php ${@}
+}
+
+cmd_nginx_docker () {
+    shift 1
+    docker-compose exec --user ${USERNAME} nginx ${@}
+}
+
+import_mysql () {
+    SQL_FILE=${1};
+    if [ -f ${SQL_FILE} ]; then
+        DB_IP=`docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q) | grep db | awk '{print $3;}'`
+        mysql -h ${DB_IP} -u ${MYSQL_USER} -p ${MYSQL_PASSWORD} ${MYSQL_DATABASE} < ${SQL_FILE}
     fi
+}
+
+export_mysql () {
+    SQL_FILE=${1};
+    DB_IP=`docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q) | grep db | awk '{print $3;}'`
+    mysqldump -h ${DB_IP} -u ${MYSQL_USER} -p${MYSQL_PASSWORD} --databases ${MYSQL_DATABASE} > ${SQL_FILE}
+}
+
+docker_uninstall() {
+    docker-compose down
+    docker rm $(docker ps -aq)
+    docker rmi $(docker images -q)
+}
+
+cleanup_docker () {
+
+    read -p "Are you sure? Project docker container and images will be deleted (y|N):" REPLY
+
+    case $REPLY in
+      y|Y) docker_uninstall ;;
+      *) echo "OK, Nothing happens" ;;
+    esac
 }
 
 show_possible_args () {
     if [ ! "$ARGS_COUNT" -eq 0 ]; then
-        echo "Only one of the following args are available (start|stop|status|build|attach|mysql|cleanup|network)"
+        echo "Only one of the following args are available (start|stop|status|build|attach|php|nginx|install|mysql|cleanup|network|import-sql)"
     else
         show_help;
     fi
@@ -118,8 +171,13 @@ process_args () {
         stop  ) stop_docker; shift ;;
         status ) status_docker; shift ;;
         build ) build_docker; shift ;;
+        php ) cmd_php_docker "$@"; shift ;;
+        nginx ) cmd_nginx_docker "$@"; shift ;;
         install ) install_docker "$2"; shift ;;
+        update-hosts ) update_hosts "$2"; shift ;;
         attach ) attach_docker "$2"; shift ;;
+        import-sql ) import_mysql "$2"; shift ;;
+        export-sql ) export_mysql "$2"; shift ;;
         mysql ) mysql_docker; shift ;;
         cleanup ) cleanup_docker; shift ;;
         network ) network_docker; shift ;;

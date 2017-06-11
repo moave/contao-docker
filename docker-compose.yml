@@ -11,7 +11,11 @@ services:
             MYSQL_USER: ${MYSQL_USER}
             MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     php:
-        build: docker/php
+        build:
+            context: docker/php
+            args:
+                USERID: ${USERID}
+                USERNAME: ${USERNAME}
         links:
             - db
         volumes:
@@ -24,12 +28,15 @@ services:
             MYSQL_PASSWORD: ${MYSQL_PASSWORD}
             MYSQL_HOST: ${MYSQL_HOST}
             MYSQL_PORT: ${MYSQL_PORT}
+            USERID: ${USERID}
+            USERNAME: ${USERNAME}
         command: /bin/bash -c "/bin/sh /opt/contao_install.sh"
     nginx:
-        build: docker/nginx
-        ports:
-            - 80:80
-            - 443:443
+        build:
+            context: docker/nginx
+            args:
+                USERID: ${USERID}
+                USERNAME: ${USERNAME}
         links:
             - php
         volumes_from:
@@ -39,6 +46,8 @@ services:
         environment:
             CONTAO_APP_HOST: ${CONTAO_APP_HOST}
             CONTAO_VERSION: ${CONTAO_VERSION}
+            USERID: ${USERID}
+            USERNAME: ${USERNAME}
         command: /bin/bash -c "/bin/sh /opt/contao.sh"
     elk:
         image: willdurand/elk

@@ -4,7 +4,7 @@ server {
 
 server {
 
-    server_name ${CONTAO_APP_HOST};
+    server_name ${CONTAO_APP_HOST} www.${CONTAO_APP_HOST};
     root /app/web;
 
     index index.php app_dev.php app.php index.html;

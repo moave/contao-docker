@@ -8,35 +8,14 @@ This complete stack run with docker and [docker-compose (1.7 or higher)](https:/
 
 ## Installation
 
-1. Create a `.env` from the `.env.dist` file. Adapt it according to your symfony application
-
+1. Create Project Docker Environment
     ```bash
-    cp .env.dist .env
+    ./project install contao.dev
     ```
 
+2. Call http://contao.dev/contao/install and finish the contao setup
 
-2. Build/run containers with (with and without detached mode)
-
-    ```bash
-    $ ./project build
-    $ ./project start
-    ```
-
-3. Update your system host file (add contao.dev)
-
-    ```bash
-    # UNIX only: get containers IP address and update host (replace IP according to your configuration)
-    $ docker network inspect bridge | grep Gateway
-
-    # unix only (on Windows, edit C:\Windows\System32\drivers\etc\hosts)
-    $ sudo echo "171.17.0.1 contao.dev" >> /etc/hosts
-    ```
-
-    **Note:** For **OS X**, please take a look [here](https://docs.docker.com/docker-for-mac/networking/) and for **Windows** read [this](https://docs.docker.com/docker-for-windows/#/step-4-explore-the-application-and-run-examples) (4th step).
-
-4. Call http://contao.dev/contao/install and finish the contao setup
-
-5. Enjoy :-)
+Enjoy :-)
 
 ## Usage
 
