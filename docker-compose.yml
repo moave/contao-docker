@@ -37,6 +37,7 @@ services:
             args:
                 USERID: ${USERID}
                 USERNAME: ${USERNAME}
+                CONTAO_APP_HOST: ${CONTAO_APP_HOST}
         links:
             - php
         volumes_from:

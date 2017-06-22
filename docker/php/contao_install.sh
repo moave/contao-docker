@@ -9,6 +9,7 @@ fi
 # generate automatically the parameters.yml if does not exists
 if [ ! -f /app/app/config/parameters.yml ]; then
     envsubst '\$MYSQL_DATABASE \$MYSQL_USER \$MYSQL_PASSWORD \$MYSQL_HOST \$MYSQL_PORT' < /opt/parameters.yml.template > /app/app/config/parameters.yml
+    chown ${USERNAME}:${USERNAME} /app/app/config/parameters.yml
 fi
 
 # composer install if vendor folder does not exists and change permission while install with root

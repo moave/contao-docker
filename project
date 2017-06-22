@@ -7,16 +7,28 @@
 # AUTHOR: Robert Eichholtz <info@eichie.de>
 ##
 
-VERSION="0.0.1-dev"
+VERSION="0.1.1-dev"
 VERBOSE=false
 ARGS_COUNT="$#"
 USERID=$(id -u $USER)
 USERNAME=$(whoami)
 ETC_HOSTS=/etc/hosts
 ENV_FILE=./.env
+SHARED_FOLDER=./shared
 
-if [ -f $ENV_FILE ];then
-    . $ENV_FILE
+
+load_env_source () {
+    # fetch data from .env file
+    if [ -f $ENV_FILE ];then
+        . $ENV_FILE
+    fi
+}
+
+load_env_source;
+
+# install dependencies if not exists
+if [ ! -f `which mysql` ] ; then
+    sudo apt-get install mysql-client-5.7
 fi
 
 show_help () {
@@ -35,7 +47,6 @@ ARGUMENTS:
     status        print current docker container status
     build         build the docker
     php           interactive shell for php
-    node          interactive shell for node
     build         interactive shell for nginx
     attach        attach to a container with second arg (i.e: db|php|nginx|elk)
     mysql         go into mysql shell
@@ -81,6 +92,11 @@ status_docker () {
 
 install_docker () {
 
+    if [ $(id -u) -eq 0 ]; then
+        echo "Do NOT run this script as root!"
+        exit 0;
+    fi
+
     if [ -f ./.env ]; then
         echo "Project already installed. Please delete the .env file to install"
         exit 0;
@@ -95,6 +111,10 @@ install_docker () {
 
     build_docker;
     start_docker;
+    import_mysql;
+    npm_docker cmd install;
+    bower_docker cmd install;
+    grunt_docker cmd build;
     update_hosts $NGINX_DOMAIN;
 }
 
@@ -132,37 +152,35 @@ cmd_nginx_docker () {
 }
 
 cmd_node_docker () {
-    shift 1
-    docker run -it --rm -v $(pwd):/app -w /app digitallyseamless/nodejs-bower-grunt
+    docker run -u ${USERID} -it --rm -v $(pwd)/www:/app -w /app digitallyseamless/nodejs-bower-grunt
 }
 
 npm_docker () {
     shift 1
-    docker run -it --rm -v $(pwd):/app -w /app digitallyseamless/nodejs-bower-grunt npm ${@}
+    docker run -u ${USERID} -it --rm -v $(pwd)/www:/app -w /app digitallyseamless/nodejs-bower-grunt npm ${@}
 }
 
 bower_docker () {
     shift 1
-    docker run -it --rm -v $(pwd):/app -w /app digitallyseamless/nodejs-bower-grunt bower ${@}
+    docker run -u ${USERID} -it --rm -v $(pwd)/www:/app -w /app digitallyseamless/nodejs-bower-grunt bower ${@}
 }
 
 grunt_docker () {
     shift 1
-    docker run -it --rm -v $(pwd):/app -w /app digitallyseamless/nodejs-bower-grunt grunt ${@}
+    docker run -u ${USERID} -it --rm -v $(pwd)/www:/app -w /app digitallyseamless/nodejs-bower-grunt grunt ${@}
 }
 
 import_mysql () {
-    SQL_FILE=${1};
-    if [ -f ${SQL_FILE} ]; then
-        DB_IP=`docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q) | grep db | awk '{print $3;}'`
-        mysql -h ${DB_IP} -u ${MYSQL_USER} -p ${MYSQL_PASSWORD} ${MYSQL_DATABASE} < ${SQL_FILE}
-    fi
+    load_env_source;
+    DB_IP=`docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q) | grep db | awk '{print $3;}'`
+    mysql -h ${DB_IP} -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} < ${SHARED_FOLDER}/latest.sql
 }
 
 export_mysql () {
-    SQL_FILE=${1};
+    load_env_source;
     DB_IP=`docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q) | grep db | awk '{print $3;}'`
-    mysqldump -h ${DB_IP} -u ${MYSQL_USER} -p${MYSQL_PASSWORD} --databases ${MYSQL_DATABASE} > ${SQL_FILE}
+    mv ${SHARED_FOLDER}/latest.sql ${SHARED_FOLDER}/$(date -d "today" +"%Y%m%d%H%M").sql
+    mysqldump --opt -Q -h ${DB_IP} -u ${MYSQL_USER} -p${MYSQL_PASSWORD} --databases ${MYSQL_DATABASE} > ${SHARED_FOLDER}/latest.sql
 }
 
 docker_uninstall() {
@@ -183,7 +201,7 @@ cleanup_docker () {
 
 show_possible_args () {
     if [ ! "$ARGS_COUNT" -eq 0 ]; then
-        echo "Only one of the following args are available (start|stop|status|build|attach|php|nginx|install|mysql|cleanup|network|import-sql|npm|bower|grunt)"
+        echo "Only one of the following args are available (start|stop|status|build|attach|php|nginx|install|mysql|cleanup|network|import-sql)"
     else
         show_help;
     fi
@@ -197,15 +215,15 @@ process_args () {
         build ) build_docker; shift ;;
         php ) cmd_php_docker "$@"; shift ;;
         nginx ) cmd_nginx_docker "$@"; shift ;;
-        node ) cmd_node_docker "$@"; shift ;;
+        node ) cmd_node_docker; shift ;;
         npm ) npm_docker "$@"; shift ;;
         bower ) bower_docker "$@"; shift ;;
         grunt ) grunt_docker "$@"; shift ;;
         install ) install_docker "$2"; shift ;;
         update-hosts ) update_hosts "$2"; shift ;;
         attach ) attach_docker "$2"; shift ;;
-        import-sql ) import_mysql "$1"; shift ;;
-        export-sql ) export_mysql "$1"; shift ;;
+        import-sql ) import_mysql; shift ;;
+        export-sql ) export_mysql; shift ;;
         mysql ) mysql_docker; shift ;;
         cleanup ) cleanup_docker; shift ;;
         network ) network_docker; shift ;;

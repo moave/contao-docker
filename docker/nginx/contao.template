@@ -4,7 +4,16 @@ server {
 
 server {
 
+    listen 80;
+    listen 443 ssl;
+
     server_name ${CONTAO_APP_HOST} www.${CONTAO_APP_HOST};
+
+    ssl_certificate     /opt/${CONTAO_APP_HOST}.crt;
+    ssl_certificate_key /opt/${CONTAO_APP_HOST}.key;
+    ssl_protocols       TLSv1 TLSv1.1 TLSv1.2;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+
     root /app/web;
 
     index index.php app_dev.php app.php index.html;
