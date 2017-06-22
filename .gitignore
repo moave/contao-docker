@@ -2,5 +2,6 @@
 .idea
 .env
 /logs
-/www
 /.data
+www
+shared
