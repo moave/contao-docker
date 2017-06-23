@@ -181,8 +181,9 @@ export_mysql () {
     load_env_source;
     DB_IP=`docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker ps -q) | grep db | awk '{print $3;}'`
     mkdir -p ${SHARED_FOLDER}
-    mv ${SHARED_FOLDER}/latest.sql ${SHARED_FOLDER}/$(date -d "today" +"%Y%m%d%H%M").sql
-    mysqldump --opt -Q -h ${DB_IP} -u ${MYSQL_USER} -p${MYSQL_PASSWORD} --databases ${MYSQL_DATABASE} > ${SHARED_FOLDER}/latest.sql
+    mysqldump --opt -Q -h ${DB_IP} -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DATABASE} > ${SHARED_FOLDER}/latest.sql
+    cp ${SHARED_FOLDER}/latest.sql ${SHARED_FOLDER}/$(date -d "today" +"%Y%m%d%H%M").sql
+
 }
 
 docker_uninstall() {
