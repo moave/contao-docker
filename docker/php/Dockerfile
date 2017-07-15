@@ -15,6 +15,11 @@ RUN apt-get update && apt-get install -y \
     g++ \
     libmcrypt-dev \
     libpng-dev \
+    libjpeg62-turbo-dev \
+    libbz2-dev \
+    libfreetype6-dev \
+    libxpm-dev \
+    libvpx-dev \
     gettext-base
 
 
@@ -27,9 +32,18 @@ RUN rm /etc/localtime
 RUN ln -s /usr/share/zoneinfo/Europe/Paris /etc/localtime
 RUN "date"
 
+RUN docker-php-ext-configure gd \
+        --with-freetype-dir=/usr/lib/x86_64-linux-gnu/ \
+        --with-png-dir=/usr/lib/x86_64-linux-gnu/ \
+        --with-jpeg-dir=/usr/lib/x86_64-linux-gnu/ \
+        --with-xpm-dir=/usr/lib/x86_64-linux-gnu/ \
+        --with-vpx-dir=/usr/lib/x86_64-linux-gnu/
+
 # Type docker-php-ext-install to see available extensions
 RUN docker-php-ext-configure intl
 RUN docker-php-ext-install pdo pdo_mysql gd intl mbstring mcrypt opcache
+
+
 
 # install xdebug
 RUN pecl install xdebug
